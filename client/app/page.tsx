@@ -2,6 +2,9 @@
 
 import React, { useState, ChangeEvent, KeyboardEvent } from 'react';
 import { Upload, Sun, Moon, Send } from 'lucide-react';
+import axios from 'axios';
+import { toast } from 'sonner';
+import { Toaster } from 'sonner';
 
 interface Message {
   type: 'user' | 'ai';
@@ -30,30 +33,42 @@ export default function Home() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState<string>('');
 
-  const handleFileUpload = (e: ChangeEvent<HTMLInputElement>): void => {
+  const handleFileUpload = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setUploadedFile(file);
-      const reader = new FileReader();
-      reader.onload = (event: ProgressEvent<FileReader>) => {
-        setFileContent(event.target?.result as string);
-      };
-      reader.readAsText(file);
+      const formData = new FormData()
+      formData.append('pdf', file);
+
+      const { data } = await axios.post(
+        'http://localhost:8000/upload/pdf',
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      )
+
+      if (data.success) {
+        toast.success('Upload successful!')
+      }
+
     }
   };
 
   const handleSendMessage = (): void => {
     if (inputValue.trim()) {
       setMessages([...messages, { type: 'user', text: inputValue }]);
-      
+
       // Simulate AI response
       setTimeout(() => {
-        setMessages(prev => [...prev, { 
-          type: 'ai', 
-          text: 'This is a simulated AI response to your message.' 
+        setMessages(prev => [...prev, {
+          type: 'ai',
+          text: 'This is a simulated AI response to your message.'
         }]);
       }, 500);
-      
+
       setInputValue('');
     }
   };
@@ -82,6 +97,7 @@ export default function Home() {
 
   return (
     <div className={`w-full h-screen ${theme.bg} ${theme.text} transition-colors duration-300 overflow-hidden flex flex-col`}>
+      <Toaster richColors theme={isDark ? 'dark' : 'light'} position='top-center' />
       {/* Header */}
       <header className={`w-full border-b ${theme.border} transition-colors duration-300 px-6 py-4`}>
         <h1 className="text-lg font-medium">Vercel Interface</h1>
@@ -92,7 +108,7 @@ export default function Home() {
         {/* File Upload Section */}
         <div className={`w-2/5 border-r ${theme.border} p-4 transition-colors duration-300 flex flex-col`}>
           <h2 className="text-sm font-medium mb-3 tracking-wide uppercase">File Upload</h2>
-          
+
           {!uploadedFile ? (
             <label className={`
               flex flex-col items-center justify-center flex-1
@@ -110,7 +126,7 @@ export default function Home() {
                 type="file"
                 className="hidden"
                 onChange={handleFileUpload}
-                accept="text/*,.json,.md,.txt,.js,.jsx,.ts,.tsx,.css,.html"
+                accept="text/*,.json,.md,.txt,.js,.jsx,.ts,.tsx,.css,.html,.pdf"
               />
             </label>
           ) : (
@@ -132,7 +148,7 @@ export default function Home() {
                   Remove
                 </button>
               </div>
-              
+
               {/* File Preview - Fixed height 144px */}
               <div className={`
                 ${theme.cardBg} border ${theme.border} rounded-lg p-3
@@ -157,7 +173,7 @@ export default function Home() {
               {isDark ? <Sun size={18} /> : <Moon size={18} />}
             </button>
           </div>
-          
+
           {/* Messages Container - Independently Scrollable */}
           <div className="flex-1 px-4 py-3 overflow-y-auto space-y-3">
             {messages.length === 0 ? (
