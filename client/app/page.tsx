@@ -1,15 +1,25 @@
 "use client"
 
-import React, { useState, ChangeEvent, KeyboardEvent } from 'react';
+import React, { useState, ChangeEvent, KeyboardEvent, useRef, useEffect } from 'react';
 import { Upload, Sun, Moon, Send } from 'lucide-react';
 import axios from 'axios';
 import { toast } from 'sonner';
 import { Toaster } from 'sonner';
+import { Document, Page } from "react-pdf";
+
+import { pdfjs } from "react-pdf";
+
+pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+  "pdfjs-dist/build/pdf.worker.min.js",
+  import.meta.url
+).toString();
 
 interface Message {
   type: 'user' | 'ai';
   text: string;
+  docs?: any[];
 }
+
 
 interface Theme {
   bg: string;
@@ -24,14 +34,29 @@ interface Theme {
   buttonHover: string;
   userMessageBg: string;
   aiMessageBg: string;
+  sourceTagBg: string;
 }
 
 export default function Home() {
   const [isDark, setIsDark] = useState<boolean>(true);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
-  const [fileContent, setFileContent] = useState<string>('');
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState<string>('');
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [showSources, setShowSources] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [numPages, setNumPages] = useState<number>(0);
+
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
 
   const handleFileUpload = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -39,6 +64,8 @@ export default function Home() {
       setUploadedFile(file);
       const formData = new FormData()
       formData.append('pdf', file);
+      const url = URL.createObjectURL(file);
+      setPdfUrl(url);
 
       const { data } = await axios.post(
         'http://localhost:8000/upload/pdf',
@@ -57,21 +84,36 @@ export default function Home() {
     }
   };
 
-  const handleSendMessage = (): void => {
+  const handleSendMessage = async () => {
     if (inputValue.trim()) {
       setMessages([...messages, { type: 'user', text: inputValue }]);
+      setIsLoading(true);
+      setInputValue('');
 
-      // Simulate AI response
-      setTimeout(() => {
+      try {
+        const { data } = await axios.post('http://localhost:8000/search', { query: inputValue });
+
+        if (data.success) {
+          setMessages(prev => [...prev, {
+            type: 'ai',
+            text: data.message,
+            docs: data.docs // Include source documents
+          }]);
+
+        }
+      } catch (error) {
+        console.error('Error:', error);
         setMessages(prev => [...prev, {
           type: 'ai',
-          text: 'This is a simulated AI response to your message.'
+          text: 'Sorry, there was an error processing your request.'
         }]);
-      }, 500);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+  }
 
-      setInputValue('');
-    }
-  };
+  // Message Display Component
 
   const handleKeyPress = (e: KeyboardEvent<HTMLInputElement>): void => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -93,6 +135,7 @@ export default function Home() {
     buttonHover: isDark ? 'hover:bg-gray-100' : 'hover:bg-gray-800',
     userMessageBg: isDark ? 'bg-gray-900' : 'bg-gray-100',
     aiMessageBg: isDark ? 'bg-gray-800' : 'bg-gray-200',
+    sourceTagBg: isDark ? 'bg-blue-900 text-blue-200' : 'bg-blue-100 text-blue-700',
   };
 
   return (
@@ -140,8 +183,10 @@ export default function Home() {
                 </div>
                 <button
                   onClick={() => {
+                    if (pdfUrl) URL.revokeObjectURL(pdfUrl);
+                    setPdfUrl(null);
                     setUploadedFile(null);
-                    setFileContent('');
+                    setNumPages(0);
                   }}
                   className={`text-xs ${theme.textSecondary} hover:${theme.text} transition-colors`}
                 >
@@ -152,9 +197,24 @@ export default function Home() {
               {/* File Preview - Fixed height 144px */}
               <div className={`
                 ${theme.cardBg} border ${theme.border} rounded-lg p-3
-                h-156 overflow-auto font-mono text-xs transition-colors duration-300
+                h-156 overflow-auto font-mono text-xs transition-colors duration-300 scrollbar-hide
               `}>
-                <pre className="whitespace-pre-wrap wrap-break-word">{fileContent}</pre>
+                {pdfUrl && (<Document
+                  file={pdfUrl}
+                  onLoadSuccess={({ numPages }) => setNumPages(numPages)}
+                  loading={<p className="text-xs opacity-60">Loading PDF…</p>}
+                >
+                  {Array.from({ length: numPages }, (_, i) => (
+                    <Page
+                      key={i}
+                      pageNumber={i + 1}
+                      scale={0.9}
+                      className="mb-3"
+                      renderTextLayer={false}
+                      renderAnnotationLayer={false}
+                    />
+                  ))}
+                </Document>)}
               </div>
             </div>
           )}
@@ -174,28 +234,113 @@ export default function Home() {
             </button>
           </div>
 
-          {/* Messages Container - Independently Scrollable */}
-          <div className="flex-1 px-4 py-3 overflow-y-auto space-y-3">
+          {/* Messages Container - Independently Scrollable with Custom Scrollbar */}
+          <div className="flex-1 px-4 py-3 overflow-y-auto space-y-3 scrollbar-hide">
             {messages.length === 0 ? (
               <div className={`flex items-center justify-center h-full ${theme.textSecondary}`}>
                 <p className="text-sm">No messages yet</p>
               </div>
             ) : (
-              messages.map((msg, idx) => (
-                <div
-                  key={idx}
-                  className={`
-                    ${msg.type === 'user' ? 'ml-auto' : 'mr-auto'}
-                    max-w-[80%] p-3 rounded-lg text-sm
-                    ${msg.type === 'user' ? theme.userMessageBg : theme.aiMessageBg}
-                    transition-colors duration-300
-                  `}
-                >
-                  {msg.text}
-                </div>
-              ))
+              <>
+                {messages.map((msg, idx) => {
+
+
+                  return (
+                    <div key={idx} className={`${msg.type === 'user' ? 'ml-auto' : 'mr-auto'} max-w-[80%]`}>
+
+                      {/* Main Message Bubble */}
+                      <div
+                        className={`
+                p-3 rounded-lg text-sm
+                ${msg.type === 'user' ? theme.userMessageBg : theme.aiMessageBg}
+                transition-colors duration-300
+              `}
+                      >
+                        <p className="whitespace-pre-wrap">{msg.text}</p>
+                      </div>
+
+                      {/* Sources Section (AI only) */}
+                      {msg.type === 'ai' && msg.docs && msg.docs.length > 0 && (
+                        <div className="mt-2">
+                          <button
+                            onClick={() => setShowSources(!showSources)}
+                            className="flex items-center gap-2 text-xs text-gray-500 hover:text-gray-800"
+                          >
+                            <svg
+                              className={`w-4 h-4 transition-transform ${showSources ? 'rotate-90' : ''}`}
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M9 5l7 7-7 7"
+                              />
+                            </svg>
+                            {msg.docs.length} Source{msg.docs.length > 1 ? 's' : ''} Referenced
+                          </button>
+
+                          {showSources && (
+                            <div className="mt-3 space-y-3">
+                              {msg.docs.map((doc, i) => (
+                                <div
+                                  key={i}
+                                  className={`border ${theme.border} rounded-lg p-3 ${theme.bg} shadow-sm`}
+                                >
+                                  {/* Source Header */}
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <span className={`${theme.sourceTagBg} text-white px-2 py-0.5 rounded text-xs font-semibold`}>
+                                      Source {i + 1}
+                                    </span>
+                                    <span className={`text-xs ${theme.textSecondary}`}>
+                                      📄 {doc.metadata.source.split('\\').pop()}
+                                    </span>
+                                  </div>
+
+                                  {/* Metadata */}
+                                  <div className={`flex gap-3 mb-2 text-xs ${theme.textSecondary}`}>
+                                    <span>
+                                      Page: {doc.metadata.loc.pageNumber}
+                                    </span>
+                                    <span>
+                                      Lines: {doc.metadata.loc.lines.from}–
+                                      {doc.metadata.loc.lines.to}
+                                    </span>
+                                  </div>
+
+                                  {/* Content */}
+                                  <div className={` p-2 rounded border-l-4 border-blue-400 ${theme.bg}`}>
+                                    <p className={`text-xs ${theme.textSecondary} leading-relaxed`}>
+                                      {doc.pageContent}
+                                    </p>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+                {isLoading && (
+                  <div className="mr-auto max-w-[80%]">
+                    <div className={`${theme.textSecondary} text-sm`}>Thinking
+                      <span className="inline-flex gap-1 ml-1">
+                        <span className="animate-pulse">.</span>
+                        <span className="animate-pulse delay-150">.</span>
+                        <span className="animate-pulse delay-300">.</span>
+                      </span>
+                    </div>
+                  </div>
+                )}
+                <div ref={messagesEndRef} />
+              </>
             )}
           </div>
+
 
           {/* Message Input */}
           <div className={`px-4 py-3 border-t ${theme.border}`}>
