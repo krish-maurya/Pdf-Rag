@@ -143,7 +143,7 @@ export default function Home() {
       <Toaster richColors theme={isDark ? 'dark' : 'light'} position='top-center' />
       {/* Header */}
       <header className={`w-full border-b ${theme.border} transition-colors duration-300 px-6 py-4`}>
-        <h1 className="text-lg font-medium">Vercel Interface</h1>
+        <h1 className="text-lg font-medium">PDF CHAT</h1>
       </header>
 
       {/* Main Layout */}
