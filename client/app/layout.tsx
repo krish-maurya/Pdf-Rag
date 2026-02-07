@@ -10,6 +10,9 @@ import {
   UserButton,
 } from '@clerk/nextjs'
 import "./globals.css";
+import HeroSection from "./HeroSection";
+
+
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -38,18 +41,14 @@ export default function RootLayout({
           className={`${geistSans.variable} ${geistMono.variable} antialiased overflow-hidden`}
         >
           <SignedOut>
-            <div className="flex justify-center items-center min-h-screen gap-4">
-              <SignInButton />
-              <SignUpButton />
+            <div className=" min-h-screen">
+              <HeroSection />
             </div>
           </SignedOut>
 
-          <SignedIn>
-            <div className="fixed top-4 right-4 z-50">
-              <UserButton />
-            </div>
-            {children}
-          </SignedIn>
+          <div className="fixed top-4 right-4 z-50">
+          </div>
+          {children}
         </body>
       </html>
     </ClerkProvider>
