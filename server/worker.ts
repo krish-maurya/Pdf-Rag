@@ -6,6 +6,10 @@ import { PDFLoader } from "@langchain/community/document_loaders/fs/pdf";
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 import "dotenv/config";
 
+const redisConnection = process.env.REDIS_URL
+  ? { url: process.env.REDIS_URL }
+  : { host: "localhost", port: 6379 };
+
 
 const worker = new Worker(
   "file-upload-queue",
@@ -64,9 +68,6 @@ const worker = new Worker(
     }
   },
   {
-    connection: {
-      host: "localhost",
-      port: 6379,
-    },
+    connection: redisConnection,
   }
 );

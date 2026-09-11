@@ -14,6 +14,8 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   import.meta.url
 ).toString();
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+
 interface Message {
   type: 'user' | 'ai';
   text: string;
@@ -95,7 +97,7 @@ export default function Home() {
       setPdfUrl(url);
 
       const { data } = await axios.post(
-        'http://localhost:8000/upload/pdf',
+        `${API_URL}/upload/pdf`,
         formData,
         {
           headers: {
@@ -119,7 +121,7 @@ export default function Home() {
       setInputValue('');
 
       try {
-        const { data } = await axios.post('http://localhost:8000/search', {
+        const { data } = await axios.post(`${API_URL}/search`, {
           query: inputValue,
           documentId: uploadedDocumentId,
         });

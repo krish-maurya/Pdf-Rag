@@ -8,6 +8,10 @@ import { QdrantClient } from '@qdrant/js-client-rest';
 import OpenAI from 'openai';
 import "dotenv/config";
 
+const redisConnection = process.env.REDIS_URL
+  ? { url: process.env.REDIS_URL }
+  : { host: 'localhost', port: 6379 };
+
 const openai = new OpenAI({
   apiKey: process.env.GOOGLE_API_KEY!,
   baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
@@ -16,8 +20,7 @@ const openai = new OpenAI({
 
 const queue = new Queue('file-upload-queue', {
   connection: {
-    host: 'localhost',
-    port: 6379,
+    ...redisConnection,
   }
 });
 
@@ -51,6 +54,10 @@ const upload = multer({ storage })
 
 
 const app = express();
+
+if (process.env.RUN_WORKER === 'true') {
+  await import('./worker.js');
+}
 
 app.use(cors());
 app.use(express.json());
