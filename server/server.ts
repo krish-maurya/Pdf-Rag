@@ -10,7 +10,14 @@ import "dotenv/config";
 
 const redisConnection = process.env.REDIS_URL
   ? { url: process.env.REDIS_URL }
-  : { host: 'localhost', port: 6379 };
+  : process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
+    ? {
+        host: new URL(process.env.UPSTASH_REDIS_REST_URL).hostname,
+        port: 6379,
+        password: process.env.UPSTASH_REDIS_REST_TOKEN,
+        tls: {},
+      }
+    : { host: 'localhost', port: 6379 };
 
 const openai = new OpenAI({
   apiKey: process.env.GOOGLE_API_KEY!,
@@ -26,6 +33,7 @@ const queue = new Queue('file-upload-queue', {
 
 const client = new QdrantClient({
   url: process.env.QDRANT_URL!,
+  apiKey: process.env.QDRANT_API_KEY,
 });
 
 const embeddings = new GoogleGenerativeAIEmbeddings({

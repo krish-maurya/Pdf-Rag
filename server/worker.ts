@@ -8,7 +8,14 @@ import "dotenv/config";
 
 const redisConnection = process.env.REDIS_URL
   ? { url: process.env.REDIS_URL }
-  : { host: "localhost", port: 6379 };
+  : process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
+    ? {
+        host: new URL(process.env.UPSTASH_REDIS_REST_URL).hostname,
+        port: 6379,
+        password: process.env.UPSTASH_REDIS_REST_TOKEN,
+        tls: {},
+      }
+    : { host: "localhost", port: 6379 };
 
 
 const worker = new Worker(
@@ -17,7 +24,7 @@ const worker = new Worker(
     try {
       console.log("Job:", job.data);
 
-      const data = JSON.parse(job.data); 
+      const data = JSON.parse(job.data);
 
       // Load pdf
       const loader = new PDFLoader(data.path);
@@ -42,6 +49,7 @@ const worker = new Worker(
       //  Qdrant client
       const client = new QdrantClient({
         url: process.env.QDRANT_URL!,
+        apiKey: process.env.QDRANT_API_KEY,
       });
 
       //  Embeddings
@@ -49,6 +57,11 @@ const worker = new Worker(
         apiKey: process.env.GOOGLE_API_KEY!,
         modelName: "gemini-embedding-001",
       });
+
+
+      const testEmbedding = await embeddings.embedQuery("dimension test");
+
+      console.log("Embedding dimension:", testEmbedding.length);
 
 
       //  Store vectors
