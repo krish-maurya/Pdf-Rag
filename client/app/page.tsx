@@ -20,6 +20,20 @@ interface Message {
   docs?: any[];
 }
 
+interface SourceDocument {
+  pageContent: string;
+  metadata: {
+    source?: string;
+    loc?: {
+      pageNumber?: number;
+      lines?: {
+        from?: number;
+        to?: number;
+      };
+    };
+  };
+}
+
 
 interface Theme {
   bg: string;
@@ -40,12 +54,25 @@ interface Theme {
 export default function Home() {
   const [isDark, setIsDark] = useState<boolean>(true);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [uploadedDocumentId, setUploadedDocumentId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState<string>('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const [showSources, setShowSources] = useState(false);
+  const [openSourceMessages, setOpenSourceMessages] = useState<Record<number, boolean>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [numPages, setNumPages] = useState<number>(0);
+
+  const getSourceName = (source?: string) => {
+    if (!source) return 'Uploaded PDF';
+    return source.split(/[\\/]/).pop() || 'Uploaded PDF';
+  };
+
+  const toggleSources = (messageIndex: number) => {
+    setOpenSourceMessages(prev => ({
+      ...prev,
+      [messageIndex]: !prev[messageIndex],
+    }));
+  };
 
 
   const scrollToBottom = () => {
@@ -78,6 +105,7 @@ export default function Home() {
       )
 
       if (data.success) {
+        setUploadedDocumentId(data.documentId);
         toast.success('Upload successful!')
       }
 
@@ -91,7 +119,10 @@ export default function Home() {
       setInputValue('');
 
       try {
-        const { data } = await axios.post('http://localhost:8000/search', { query: inputValue });
+        const { data } = await axios.post('http://localhost:8000/search', {
+          query: inputValue,
+          documentId: uploadedDocumentId,
+        });
 
         if (data.success) {
           setMessages(prev => [...prev, {
@@ -186,6 +217,7 @@ export default function Home() {
                     if (pdfUrl) URL.revokeObjectURL(pdfUrl);
                     setPdfUrl(null);
                     setUploadedFile(null);
+                    setUploadedDocumentId(null);
                     setNumPages(0);
                   }}
                   className={`text-xs ${theme.textSecondary} hover:${theme.text} transition-colors`}
@@ -263,11 +295,11 @@ export default function Home() {
                       {msg.type === 'ai' && msg.docs && msg.docs.length > 0 && (
                         <div className="mt-2">
                           <button
-                            onClick={() => setShowSources(!showSources)}
+                            onClick={() => toggleSources(idx)}
                             className="flex items-center gap-2 text-xs text-gray-500 hover:text-gray-800"
                           >
                             <svg
-                              className={`w-4 h-4 transition-transform ${showSources ? 'rotate-90' : ''}`}
+                              className={`w-4 h-4 transition-transform ${openSourceMessages[idx] ? 'rotate-90' : ''}`}
                               fill="none"
                               stroke="currentColor"
                               viewBox="0 0 24 24"
@@ -282,9 +314,9 @@ export default function Home() {
                             {msg.docs.length} Source{msg.docs.length > 1 ? 's' : ''} Referenced
                           </button>
 
-                          {showSources && (
+                          {openSourceMessages[idx] && (
                             <div className="mt-3 space-y-3">
-                              {msg.docs.map((doc, i) => (
+                              {(msg.docs as SourceDocument[]).map((doc, i) => (
                                 <div
                                   key={i}
                                   className={`border ${theme.border} rounded-lg p-3 ${theme.bg} shadow-sm`}
@@ -295,18 +327,18 @@ export default function Home() {
                                       Source {i + 1}
                                     </span>
                                     <span className={`text-xs ${theme.textSecondary}`}>
-                                      📄 {doc.metadata.source.split('\\').pop()}
+                                      📄 {getSourceName(doc.metadata.source)}
                                     </span>
                                   </div>
 
                                   {/* Metadata */}
                                   <div className={`flex gap-3 mb-2 text-xs ${theme.textSecondary}`}>
                                     <span>
-                                      Page: {doc.metadata.loc.pageNumber}
+                                      Page: {doc.metadata.loc?.pageNumber ?? 'Unknown'}
                                     </span>
                                     <span>
-                                      Lines: {doc.metadata.loc.lines.from}–
-                                      {doc.metadata.loc.lines.to}
+                                      Lines: {doc.metadata.loc?.lines?.from ?? '?'}–
+                                      {doc.metadata.loc?.lines?.to ?? '?'}
                                     </span>
                                   </div>
 

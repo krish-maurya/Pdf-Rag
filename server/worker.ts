@@ -26,6 +26,14 @@ const worker = new Worker(
       });
 
       const chunks = await splitter.splitDocuments(docs);
+      const indexedChunks = chunks.map(chunk => ({
+        ...chunk,
+        metadata: {
+          ...chunk.metadata,
+          source: data.fileName,
+          documentId: data.documentId,
+        },
+      }));
 
       //  Qdrant client
       const client = new QdrantClient({
@@ -41,7 +49,7 @@ const worker = new Worker(
 
       //  Store vectors
       await QdrantVectorStore.fromDocuments(
-        chunks,
+        indexedChunks,
         embeddings,
         {
           client,

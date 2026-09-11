@@ -60,25 +60,54 @@ app.get('/', (req: Request, res: Response) => {
 })
 
 app.post('/upload/pdf', upload.single('pdf'), (req: Request, res: Response) => {
+  if (!req.file) {
+    return res.status(400).json({ success: false, message: 'A PDF file is required' });
+  }
+
+  const documentId = req.file.filename;
   queue.add('file-ready', JSON.stringify({
-    fileName: req.file?.originalname,
-    source: req.file?.destination,
-    path: req.file?.path,
+    documentId,
+    fileName: req.file.originalname,
+    path: req.file.path,
   }));
-  return res.json({ success: true, message: "File uploaded" })
+  return res.json({ success: true, message: "File uploaded", documentId })
 })
 
 app.post('/search', async (req: Request, res: Response) => {
   try {
-    const {query} = req.body;
-    const retriver = vectorStore.asRetriever(2);
+    const { query, documentId } = req.body;
+    if (!query || !documentId) {
+      return res.status(400).json({ success: false, message: 'Query and uploaded document are required' });
+    }
+
+    const retriver = vectorStore.asRetriever({
+      k: 4,
+      filter: {
+        must: [
+          {
+            key: 'metadata.documentId',
+            match: { value: documentId },
+          },
+        ],
+      },
+    });
     const result = await retriver.invoke(query);
+
+    const uniqueResult = result.filter((doc, index, documents) => {
+      const pageNumber = doc.metadata.loc?.pageNumber ?? '';
+      const source = doc.metadata.source ?? '';
+      return documents.findIndex(candidate =>
+        candidate.metadata.source === source &&
+        candidate.metadata.loc?.pageNumber === pageNumber &&
+        candidate.pageContent === doc.pageContent
+      ) === index;
+    });
 
     const SYSTEM_PROMPT = `You are a helpful assistant for answering questions related to programming.
     Do not format the answer using bullets, stars, markdown, or headings.
 Respond in clear, natural paragraph text only.
      You have access to the following pieces of context:
-                ${JSON.stringify(result)}
+                ${JSON.stringify(uniqueResult)}
 
                 User question: ${query}`;
 
@@ -96,7 +125,7 @@ Respond in clear, natural paragraph text only.
       ],
     });
 
-    return res.status(200).json({ success: true, message: response.choices[0].message.content, docs: result })
+    return res.status(200).json({ success: true, message: response.choices[0].message.content, docs: uniqueResult })
 
   } catch (error) {
     if (error instanceof Error) {
