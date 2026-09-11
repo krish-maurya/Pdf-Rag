@@ -8,7 +8,8 @@
     "dev": "tsx watch server.ts",
     "dev:worker": "tsx watch worker.ts",
     "build": "tsc",
-    "start": "node dist/server.js"
+    "start": "node dist/server.js",
+    "start:worker": "node dist/worker.js"
   },
   "keywords": [],
   "author": "",
@@ -24,6 +25,7 @@
     "@langchain/textsplitters": "^1.0.1",
     "@qdrant/js-client-rest": "^1.16.2",
     "bullmq": "^5.67.2",
+    "cloudinary": "^2.11.0",
     "cors": "^2.8.6",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",

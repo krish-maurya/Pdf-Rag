@@ -13,7 +13,7 @@ importers:
         version: 0.24.1
       '@langchain/community':
         specifier: ^1.1.10
-        version: 1.1.10(@browserbasehq/sdk@2.6.0)(@browserbasehq/stagehand@1.14.0(@playwright/test@1.58.1)(deepmerge@4.3.1)(dotenv@17.2.3)(openai@6.17.0(ws@8.19.0)(zod@4.3.6))(zod@4.3.6))(@ibm-cloud/watsonx-ai@1.7.7)(@langchain/core@1.1.18(openai@6.17.0(ws@8.19.0)(zod@4.3.6)))(@qdrant/js-client-rest@1.16.2(typescript@5.9.3))(ibm-cloud-sdk-core@5.4.5)(ioredis@5.9.2)(jsonwebtoken@9.0.3)(openai@6.17.0(ws@8.19.0)(zod@4.3.6))(pdf-parse@1.1.1)(playwright@1.58.1)(ws@8.19.0)
+        version: 1.1.10(@browserbasehq/sdk@2.6.0)(@browserbasehq/stagehand@1.14.0(@playwright/test@1.58.1)(deepmerge@4.3.1)(dotenv@17.2.3)(openai@6.17.0(ws@8.19.0)(zod@4.3.6))(zod@4.3.6))(@ibm-cloud/watsonx-ai@1.7.7)(@langchain/core@1.1.18(openai@6.17.0(ws@8.19.0)(zod@4.3.6)))(@qdrant/js-client-rest@1.16.2(typescript@5.9.3))(ibm-cloud-sdk-core@5.4.5)(ioredis@5.9.2)(jsonwebtoken@9.0.3)(lodash@4.18.1)(openai@6.17.0(ws@8.19.0)(zod@4.3.6))(pdf-parse@1.1.1)(playwright@1.58.1)(ws@8.19.0)
       '@langchain/core':
         specifier: ^1.1.18
         version: 1.1.18(openai@6.17.0(ws@8.19.0)(zod@4.3.6))
@@ -35,6 +35,9 @@ importers:
       bullmq:
         specifier: ^5.67.2
         version: 5.67.2
+      cloudinary:
+        specifier: ^2.11.0
+        version: 2.11.0
       cors:
         specifier: ^2.8.6
         version: 2.8.6
@@ -928,6 +931,10 @@ packages:
     resolution: {integrity: sha512-oKnbhFyRIXpUuez8iBMmyEa4nbj4IOQyuhc/wy9kY7/WVPcwIO9VA668Pu8RkO7+0G76SLROeyw9CpQ061i4mA==}
     engines: {node: '>=10'}
 
+  cloudinary@2.11.0:
+    resolution: {integrity: sha512-o2pAkDDqrzPFE/mn9GCfFjBIGQmPs++Ts6rtkFl4vY528DNHiMovKWjH16HBjeGa9iwI7eAad24aWN2emT0aww==}
+    engines: {node: '>=9'}
+
   cluster-key-slot@1.1.2:
     resolution: {integrity: sha512-RMr0FhtfXemyinomL4hrWcYJxmX6deFdCxpJzhDttxgO1+bcCnkk+9drydLVDmAMG7NE6aN/fl4F7ucU/90gAA==}
     engines: {node: '>=0.10.0'}
@@ -1291,6 +1298,9 @@ packages:
 
   lodash.once@4.1.1:
     resolution: {integrity: sha512-Sb487aTOCr9drQVL8pIxOzVhafOjZN9UU54hiN8PU3uAiSV7lx1yYNpbNmex2PK6dSJoNTSJUUswT651yww3Mg==}
+
+  lodash@4.18.1:
+    resolution: {integrity: sha512-dMInicTPVE8d1e5otfwmmjlxkZoUpiVLwyeTdUsi/Caj/gfzzblBcCE5sRHV/AsjuCmxWrte2TNGSYuCeCq+0Q==}
 
   luxon@3.7.2:
     resolution: {integrity: sha512-vtEhXh/gNjI9Yg1u4jX/0YVPMvxzHuGgCm6tC5kZyb08yjGWGnqAjGJvcXbqQR2P3MyMEFnRbpcdFS6PBcLqew==}
@@ -1924,7 +1934,7 @@ snapshots:
       - openai
       - ws
 
-  '@langchain/community@1.1.10(@browserbasehq/sdk@2.6.0)(@browserbasehq/stagehand@1.14.0(@playwright/test@1.58.1)(deepmerge@4.3.1)(dotenv@17.2.3)(openai@6.17.0(ws@8.19.0)(zod@4.3.6))(zod@4.3.6))(@ibm-cloud/watsonx-ai@1.7.7)(@langchain/core@1.1.18(openai@6.17.0(ws@8.19.0)(zod@4.3.6)))(@qdrant/js-client-rest@1.16.2(typescript@5.9.3))(ibm-cloud-sdk-core@5.4.5)(ioredis@5.9.2)(jsonwebtoken@9.0.3)(openai@6.17.0(ws@8.19.0)(zod@4.3.6))(pdf-parse@1.1.1)(playwright@1.58.1)(ws@8.19.0)':
+  '@langchain/community@1.1.10(@browserbasehq/sdk@2.6.0)(@browserbasehq/stagehand@1.14.0(@playwright/test@1.58.1)(deepmerge@4.3.1)(dotenv@17.2.3)(openai@6.17.0(ws@8.19.0)(zod@4.3.6))(zod@4.3.6))(@ibm-cloud/watsonx-ai@1.7.7)(@langchain/core@1.1.18(openai@6.17.0(ws@8.19.0)(zod@4.3.6)))(@qdrant/js-client-rest@1.16.2(typescript@5.9.3))(ibm-cloud-sdk-core@5.4.5)(ioredis@5.9.2)(jsonwebtoken@9.0.3)(lodash@4.18.1)(openai@6.17.0(ws@8.19.0)(zod@4.3.6))(pdf-parse@1.1.1)(playwright@1.58.1)(ws@8.19.0)':
     dependencies:
       '@browserbasehq/stagehand': 1.14.0(@playwright/test@1.58.1)(deepmerge@4.3.1)(dotenv@17.2.3)(openai@6.17.0(ws@8.19.0)(zod@4.3.6))(zod@4.3.6)
       '@ibm-cloud/watsonx-ai': 1.7.7
@@ -1944,6 +1954,7 @@ snapshots:
       '@qdrant/js-client-rest': 1.16.2(typescript@5.9.3)
       ioredis: 5.9.2
       jsonwebtoken: 9.0.3
+      lodash: 4.18.1
       pdf-parse: 1.1.1
       playwright: 1.58.1
       ws: 8.19.0
@@ -2238,6 +2249,10 @@ snapshots:
     dependencies:
       ansi-styles: 4.3.0
       supports-color: 7.2.0
+
+  cloudinary@2.11.0:
+    dependencies:
+      lodash: 4.18.1
 
   cluster-key-slot@1.1.2: {}
 
@@ -2649,6 +2664,8 @@ snapshots:
   lodash.isstring@4.0.1: {}
 
   lodash.once@4.1.1: {}
+
+  lodash@4.18.1: {}
 
   luxon@3.7.2: {}
 

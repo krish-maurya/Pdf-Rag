@@ -1,6 +1,7 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import multer from 'multer';
+import { v2 as cloudinary } from 'cloudinary';
 import { Queue } from 'bullmq';
 import { QdrantVectorStore } from '@langchain/qdrant';
 import { GoogleGenerativeAIEmbeddings } from '@langchain/google-genai';
@@ -22,6 +23,12 @@ const redisConnection = process.env.REDIS_URL
 const openai = new OpenAI({
   apiKey: process.env.GOOGLE_API_KEY!,
   baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
+});
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
 
@@ -50,15 +57,26 @@ const vectorStore = await QdrantVectorStore.fromExistingCollection(
 );
 
 
-const storage = multer.diskStorage({
-  destination: 'uploads/',
-  filename: (_req, file, cb) => {
-    const uniquePreffix = Date.now() + "-" + Math.round(Math.random() * 1E9)
-    cb(null, `${uniquePreffix}-${file.originalname}`)
-  }
-})
+const upload = multer({ storage: multer.memoryStorage() });
 
-const upload = multer({ storage })
+const uploadToCloudinary = (file: Express.Multer.File) => new Promise<{ secure_url: string; public_id: string }>((resolve, reject) => {
+  const stream = cloudinary.uploader.upload_stream(
+    {
+      resource_type: 'raw',
+      folder: 'pdfchat',
+      public_id: `${Date.now()}-${file.originalname.replace(/[^a-zA-Z0-9._-]/g, '-')}`,
+    },
+    (error, result) => {
+      if (error || !result) {
+        reject(error || new Error('Cloudinary upload failed'));
+        return;
+      }
+      resolve({ secure_url: result.secure_url, public_id: result.public_id });
+    },
+  );
+
+  stream.end(file.buffer);
+});
 
 
 const app = express();
@@ -74,18 +92,26 @@ app.get('/', (req: Request, res: Response) => {
   res.send('Server running')
 })
 
-app.post('/upload/pdf', upload.single('pdf'), (req: Request, res: Response) => {
+app.post('/upload/pdf', upload.single('pdf'), async (req: Request, res: Response) => {
   if (!req.file) {
     return res.status(400).json({ success: false, message: 'A PDF file is required' });
   }
 
-  const documentId = req.file.filename;
-  queue.add('file-ready', JSON.stringify({
-    documentId,
-    fileName: req.file.originalname,
-    path: req.file.path,
-  }));
-  return res.json({ success: true, message: "File uploaded", documentId })
+  try {
+    const storedFile = await uploadToCloudinary(req.file);
+    const documentId = storedFile.public_id;
+
+    await queue.add('file-ready', JSON.stringify({
+      documentId,
+      fileName: req.file.originalname,
+      fileUrl: storedFile.secure_url,
+    }));
+
+    return res.json({ success: true, message: "File uploaded", documentId });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'File upload failed';
+    return res.status(500).json({ success: false, message });
+  }
 })
 
 app.post('/search', async (req: Request, res: Response) => {
