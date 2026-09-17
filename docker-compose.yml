@@ -1,55 +1,12 @@
 services:
   redis:
     image: redis:7
-    container_name: pdf_redis
+    container_name: redis
     ports:
       - "6379:6379"
-    restart: unless-stopped
-
+  
   qdrant:
-    image: qdrant/qdrant:latest
-    container_name: pdf_qdrant
+    image: qdrant/qdrant
+    container_name: qdrant
     ports:
       - "6333:6333"
-    volumes:
-      - qdrant_storage:/qdrant/storage
-    restart: unless-stopped
-
-  server:
-    build:
-      context: ./server
-      dockerfile: Dockerfile
-    container_name: pdf_server
-    ports:
-      - "8000:8000"
-    environment:
-      - PORT=8000
-      - RUN_WORKER=true
-      - REDIS_URL=redis://redis:6379
-      - QDRANT_URL=http://qdrant:6333
-      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME}
-      - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY}
-      - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET}
-    depends_on:
-      - redis
-      - qdrant
-    restart: unless-stopped
-
-  client:
-    build:
-      context: ./client
-      dockerfile: Dockerfile
-    container_name: pdf_client
-    ports:
-      - "3000:3000"
-    environment:
-      - NEXT_PUBLIC_API_URL=http://localhost:8000
-      - NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
-    depends_on:
-      - server
-    restart: unless-stopped
-
-volumes:
-  qdrant_storage:
