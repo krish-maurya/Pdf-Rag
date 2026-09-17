@@ -88,7 +88,7 @@ export default function HeroSection() {
     <div className="relative min-h-screen overflow-hidden bg-gradient-to-b from-black via-zinc-950 to-zinc-900">
       {/* Dissolve transition overlay */}
       {isTransitioning && (
-        <div className="fixed inset-0 z-50 bg-black animate-dissolve" />
+        <div className="fixed inset-0 z-50 bg-black opacity-100 transition-opacity duration-700" />
       )}
 
       {/* Animated starfield canvas */}
@@ -180,20 +180,6 @@ export default function HeroSection() {
         </div>
       </div>
 
-      {/* CSS for dissolve animation */}
-      <style jsx>{`
-        @keyframes dissolve {
-          0% {
-            opacity: 0;
-          }
-          100% {
-            opacity: 1;
-          }
-        }
-        .animate-dissolve {
-          animation: dissolve 0.6s ease-in-out forwards;
-        }
-      `}</style>
     </div>
   );
 }

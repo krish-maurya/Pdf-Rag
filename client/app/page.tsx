@@ -9,10 +9,7 @@ import { Document, Page } from "react-pdf";
 
 import { pdfjs } from "react-pdf";
 
-pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-  "pdfjs-dist/build/pdf.worker.min.js",
-  import.meta.url
-).toString();
+pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
@@ -35,7 +32,6 @@ interface SourceDocument {
     };
   };
 }
-
 
 interface Theme {
   bg: string;
@@ -76,7 +72,6 @@ export default function Home() {
     }));
   };
 
-
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
@@ -91,26 +86,30 @@ export default function Home() {
     const file = e.target.files?.[0];
     if (file) {
       setUploadedFile(file);
-      const formData = new FormData()
+      const formData = new FormData();
       formData.append('pdf', file);
       const url = URL.createObjectURL(file);
       setPdfUrl(url);
 
-      const { data } = await axios.post(
-        `${API_URL}/upload/pdf`,
-        formData,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
+      try {
+        const { data } = await axios.post(
+          `${API_URL}/upload/pdf`,
+          formData,
+          {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
+          }
+        );
+
+        if (data.success) {
+          setUploadedDocumentId(data.documentId);
+          toast.success('Upload successful!');
         }
-      )
-
-      if (data.success) {
-        setUploadedDocumentId(data.documentId);
-        toast.success('Upload successful!')
+      } catch (error: any) {
+        console.error('Upload error:', error);
+        toast.error(error.response?.data?.message || 'File upload failed');
       }
-
     }
   };
 
@@ -130,23 +129,25 @@ export default function Home() {
           setMessages(prev => [...prev, {
             type: 'ai',
             text: data.message,
-            docs: data.docs // Include source documents
+            docs: data.docs, // Include source documents
           }]);
-
+        } else {
+          setMessages(prev => [...prev, {
+            type: 'ai',
+            text: data.message || 'Sorry, there was an error processing your request.',
+          }]);
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error:', error);
         setMessages(prev => [...prev, {
           type: 'ai',
-          text: 'Sorry, there was an error processing your request.'
+          text: error.response?.data?.message || 'Sorry, there was an error processing your request.',
         }]);
       } finally {
         setIsLoading(false);
       }
-    };
-  }
-
-  // Message Display Component
+    }
+  };
 
   const handleKeyPress = (e: KeyboardEvent<HTMLInputElement>): void => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -277,8 +278,6 @@ export default function Home() {
             ) : (
               <>
                 {messages.map((msg, idx) => {
-
-
                   return (
                     <div key={idx} className={`${msg.type === 'user' ? 'ml-auto' : 'mr-auto'} max-w-[80%]`}>
 
@@ -374,7 +373,6 @@ export default function Home() {
               </>
             )}
           </div>
-
 
           {/* Message Input */}
           <div className={`px-4 py-3 border-t ${theme.border}`}>

@@ -9,12 +9,13 @@
     "dev:worker": "tsx watch worker.ts",
     "build": "tsc",
     "start": "node dist/server.js",
-    "start:worker": "node dist/worker.js"
+    "start:worker": "node dist/worker.js",
+    "start:all": "node dist/server.js & node dist/worker.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "packageManager": "pnpm@10.15.0",
+  "packageManager": "npm@10.9.2",
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
     "@langchain/community": "^1.1.10",

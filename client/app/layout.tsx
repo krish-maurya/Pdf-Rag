@@ -1,18 +1,12 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { Toaster } from "sonner";
 import {
   ClerkProvider,
-  SignInButton,
-  SignUpButton,
   SignedIn,
   SignedOut,
-  UserButton,
-} from '@clerk/nextjs'
+} from '@clerk/nextjs';
 import "./globals.css";
 import HeroSection from "./HeroSection";
-
-
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -34,23 +28,41 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  return (
-    <ClerkProvider>
-      <html lang="en">
-        <body
-          className={`${geistSans.variable} ${geistMono.variable} antialiased overflow-hidden`}
-        >
-          <SignedOut>
-            <div className=" min-h-screen">
-              <HeroSection />
-            </div>
-          </SignedOut>
+  const hasClerkKey = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY);
 
+  const body = (
+    <body
+      className={`${geistSans.variable} ${geistMono.variable} antialiased overflow-hidden`}
+    >
+      <SignedOut>
+        <div className="min-h-screen">
+          <HeroSection />
+        </div>
+      </SignedOut>
+      <SignedIn>
+        <div className="fixed top-4 right-4 z-50">
+        </div>
+        {children}
+      </SignedIn>
+      {!hasClerkKey && (
+        <>
           <div className="fixed top-4 right-4 z-50">
           </div>
           {children}
-        </body>
+        </>
+      )}
+    </body>
+  );
+
+  return hasClerkKey ? (
+    <ClerkProvider>
+      <html lang="en">
+        {body}
       </html>
     </ClerkProvider>
+  ) : (
+    <html lang="en">
+      {body}
+    </html>
   );
 }

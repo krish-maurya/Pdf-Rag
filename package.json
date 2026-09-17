@@ -1,0 +1,16 @@
+{
+  "name": "pdf-rag",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Full-stack Retrieval-Augmented Generation (RAG) system for querying PDFs",
+  "packageManager": "npm@10.9.2",
+  "scripts": {
+    "install:all": "npm --prefix server install --legacy-peer-deps && npm --prefix client install --legacy-peer-deps",
+    "build:server": "npm --prefix server run build",
+    "build:client": "npm --prefix client run build",
+    "build": "npm run build:server && npm run build:client",
+    "dev:server": "npm --prefix server run dev",
+    "dev:client": "npm --prefix client run dev"
+  },
+  "keywords": ["rag", "pdf", "qdrant", "bullmq", "redis", "langchain", "gemini", "openai"]
+}
